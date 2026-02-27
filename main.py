@@ -10,17 +10,19 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-def get_report(report_type):
-    # Prompt logic changes based on the request type
+def get_intelligence_report(report_type):
+    # Context for 2026 
+    base_context = "Current Date: February 2026. User Profile: IQ 148, CS/Neuro/Psych student at ASU."
+    
     prompts = {
-        "morning": "Daily Report Feb 2026: 1. Likelihood of Trump being removed from office & timeline. 2. Weather in Hollister, CA and Bastrop, TX at 5am. 3. Top headline.",
-        "neuro": "Provide 3 recent breakthroughs in Neuroscience or Psychology (specifically BPD/ASPD research) from 2025-2026.",
-        "tech": "Give me 5 critical updates in Computer Science and AI for today.",
-        "random": "Give me 5 interesting facts or world news events happening right now."
+        "morning": f"{base_context} Analyze 2026 political landscape: Trump removal likelihood/timeline. Provide LA weather at 5 AM. Focus on hard data and probability.",
+        "neuro": f"{base_context} Summarize one high-impact paper on dopamine-mediated bonding or BPD/ASPD neurological markers published in late 2025/2026.",
+        "tech": f"{base_context} Identify 3 critical shifts in AI systems architecture or low-level Python optimizations relevant to CS students today.",
+        "random": "Provide 5 distinct global 'alpha' data points: Markets, Geopolitics, and high-performance cognitive hacks."
     }
     
-    selected_prompt = prompts.get(report_type, prompts["random"])
-    response = model.generate_content(selected_prompt)
+    prompt = prompts.get(report_type, prompts["random"])
+    response = model.generate_content(prompt)
     return response.text
 
 def send_to_discord(content):
