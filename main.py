@@ -1,45 +1,46 @@
 import os
 import requests
-import google.generativeai as genai
 from flask import Flask, request, jsonify
+from google import genai  # Newer 2026 library
 
 app = Flask(__name__)
 
-# Configure API Keys (Set these in Render Dashboard -> Environment)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# The client automatically looks for GEMINI_API_KEY in your Env Vars
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
-model = genai.GenerativeModel('gemini-1.5-flash')
 
-def get_intelligence_report(report_type):
-    # Context for 2026 
-    base_context = "Current Date: February 2026. User Profile: IQ 148, CS/Neuro/Psych student at ASU."
+def get_intelligence(report_type):
+    # Context optimized for your profile
+    base_context = "Current Date: Feb 2026. Student: IQ 148, ASU, CS/Neuroscience."
     
     prompts = {
-        "morning": f"{base_context} Analyze 2026 political landscape: Trump removal likelihood/timeline. Provide LA weather at 5 AM. Focus on hard data and probability.",
-        "neuro": f"{base_context} Summarize one high-impact paper on dopamine-mediated bonding or BPD/ASPD neurological markers published in late 2025/2026.",
-        "tech": f"{base_context} Identify 3 critical shifts in AI systems architecture or low-level Python optimizations relevant to CS students today.",
-        "random": "Provide 5 distinct global 'alpha' data points: Markets, Geopolitics, and high-performance cognitive hacks."
+        "morning": f"{base_context} Analyze 2026 politics: Trump removal probability/timeline. LA weather at 5 AM.",
+        "neuro": f"{base_context} Latest research on dopamine-storm bonding or ASPD/BPD neurology.",
+        "tech": f"{base_context} 3 critical AI/CS updates for a senior-level student.",
+        "random": "5 high-impact data points: Global markets and cognitive performance hacks."
     }
     
-    prompt = prompts.get(report_type, prompts["random"])
-    response = model.generate_content(prompt)
+    prompt_text = prompts.get(report_type, prompts["random"])
+    
+    # Using the latest 3-Flash model
+    response = client.models.generate_content(
+        model="gemini-2.0-flash", 
+        contents=prompt_text
+    )
     return response.text
-
-def send_to_discord(content):
-    payload = {"content": f"**[System Update]**\n{content}"}
-    requests.post(DISCORD_WEBHOOK_URL, json=payload)
 
 @app.route('/trigger')
 def trigger():
-    # Usage: https://your-app.onrender.com/trigger?type=morning
-    report_type = request.args.get('type', 'random')
-    report_content = get_report(report_type)
-    send_to_discord(report_content)
-    return jsonify({"status": "success", "type": report_type})
+    report_type = request.args.get('type', 'morning')
+    content = get_intelligence(report_type)
+    
+    # Send to Discord
+    requests.post(DISCORD_WEBHOOK_URL, json={"content": f"**[2026 Intelligence Report]**\n{content}"})
+    return jsonify({"status": "delivered", "type": report_type})
 
 @app.route('/')
-def home():
-    return "Worker Active."
+def health():
+    return "Worker is Online."
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
